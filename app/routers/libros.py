@@ -73,7 +73,7 @@ def actualizar_libro(id: int, libro: LibroCreate, db: Session = Depends(get_db))
     db_libro.anio_publicacion = libro.anio_publicacion
 
     libros_prestados = db_libro.total_ejemplares - db_libro.ejemplares_disponibles
-    
+
     db_libro.total_ejemplares = libro.total_ejemplares
     db_libro.ejemplares_disponibles = libro.total_ejemplares - libros_prestados
 
@@ -81,3 +81,16 @@ def actualizar_libro(id: int, libro: LibroCreate, db: Session = Depends(get_db))
     db.refresh(db_libro)
 
     return db_libro
+
+@router.delete("/{id}")
+def eliminar_libro(id: int, db: Session = Depends(get_db)):
+    
+    libro = db.query(LibroDB).filter(LibroDB.id == id).first()
+
+    if not libro:
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+
+    db.delete(libro)
+    db.commit()
+
+    return {"message": "Libro eliminado correctamente"}
