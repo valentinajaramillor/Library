@@ -10,7 +10,6 @@ from app.models.libro_db import LibroDB
 
 router = APIRouter(prefix="/libros", tags=["Libros"])
 
-# dependencia DB
 def get_db():
     db = SessionLocal()
     try:
@@ -18,7 +17,6 @@ def get_db():
     finally:
         db.close()
 
-# POST crear libro
 @router.post("/", response_model=LibroResponse, status_code=201)
 def crear_libro(libro: LibroCreate, db: Session = Depends(get_db)):
 
@@ -94,3 +92,24 @@ def eliminar_libro(id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Libro eliminado correctamente"}
+
+@router.post("/{id}/prestar")
+def prestar_libro(id: int, db: Session = Depends(get_db)):
+
+    libro = db.query(LibroDB).filter(LibroDB.id == id).first()
+
+    if not libro:
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+    
+    if libro.ejemplares_disponibles <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No hay ejemplares disponibles para prestamo"
+        )
+
+    libro.ejemplares_disponibles -= 1
+
+    db.commit()
+    db.refresh(libro)
+
+    return {"message": "Libro prestado correctamente"}
